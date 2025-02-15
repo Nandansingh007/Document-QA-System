@@ -15,7 +15,6 @@ os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
-
 def get_pdf_text(pdf_docs):
     text=""
     for pdf in pdf_docs:
@@ -23,7 +22,6 @@ def get_pdf_text(pdf_docs):
         for page in pdf_reader.pages:
             text+= page.extract_text()
     return  text
-
 
 
 def get_text_chunks(text):
@@ -58,7 +56,6 @@ def get_conversational_chain():
     return chain
 
 
-
 def user_input(user_question):
     embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
     
@@ -72,20 +69,33 @@ def user_input(user_question):
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
 
-    print(response)
-    st.write("Reply: ", response["output_text"])
+    # Add the question and response to the chat history
+    st.session_state.chat_history.append({"role": "user", "content": user_question})
+    st.session_state.chat_history.append({"role": "assistant", "content": response["output_text"]})
 
-
+    # print(response)
+    # st.write("Reply: ", response["output_text"])
 
 
 def main():
     st.set_page_config("Chat PDF")
     st.header("Chat with PDF using Gemini💁")
 
-    user_question = st.text_input("Ask a Question from the PDF Files")
+    # Initialize chat history in session state
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Display chat history
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+    user_question = st.chat_input("Ask a Question from the PDF Files")
 
     if user_question:
         user_input(user_question)
+        # Rerun to update the chat history display
+        st.rerun()
 
     with st.sidebar:
         st.title("Menu:")
